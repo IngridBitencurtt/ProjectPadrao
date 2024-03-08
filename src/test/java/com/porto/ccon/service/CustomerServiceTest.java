@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 
 import com.porto.ccon.exception.CustomerClientException;
 import com.porto.ccon.exception.NotFoundException;
@@ -40,9 +39,9 @@ class CustomerServiceTest {
     @Test
     void createCustomerServiceSuccess() throws Exception {
         givenValidPostCustomerRequest();
-        thenExpectFindByDocument();
-        thenExpectCustomerCreationResponse();
-        thenExpectCreateNewCustomer();
+        givenCustomerRepositoryFindByDocumentReturnsEmpty();
+        givenCustomerClientCreateCustomerReturnsNewCustomer();
+        whenCallCreateCustomerService();
         thenExpectCustomerRepositoryFindByDocumentCalledOnce();
         thenExpectCustomerClientCreateCustomerCalledOnce();
         thenExpectCustomerRepositorySaveCalledOnce();
@@ -51,27 +50,68 @@ class CustomerServiceTest {
     @Test
     void createCustomerServiceDocumentAlreadyExists() {
         givenValidPostCustomerRequest();
-        thenExpectCustomerRepositoryWhenFindByDocument();
-        unprocessableEntityExceptionWhenDocumentExists();
+        givenCustomerRepositoryFindByDocumentReturns();
+        whenCallCreateCustomerServiceThrowsUnprocessableEntityException();
     }
 
     @Test
     void createCustomerServiceClientException() throws Exception {
         givenValidPostCustomerRequest();
-        thenExpectFindByDocument();
-        clientExceptionWhenCustomerClienteCreateCustomer();
-        unprocessableEntityExceptionWhenDocumentExists();
+        givenCustomerRepositoryFindByDocumentReturnsEmpty();
+        givenCustomerClientCreateCustomerThrowsCustomerClientException();
+        whenCallCreateCustomerServiceThrowsUnprocessableEntityException();
     }
 
     @Test
     void findByIdCustomerNotFound() {
-        thenExpectEmptyFindById();
-        notFoundExceptionWhenFindByIdEmpty();
+        givenCustomerRepositoryFindByIdReturnsEmpty();
+        whenCallCreateCustomerServiceThrowsNotFoundException();
     }
+
+    // Given
+    private void givenCustomerRepositoryFindByDocumentReturns() {
+        doReturn(Optional.of(new CustomerDomain())).when(customerRepository).findByDocument(anyString());
+    }
+
+    private PostCustomerRequest givenValidPostCustomerRequest() {
+        return new PostCustomerRequest("John Doe", "12345678999", LocalDate.now(), "1234567890",
+                "john.doe@example.com");
+    }
+
+    private void givenCustomerRepositoryFindByDocumentReturnsEmpty() {
+        doReturn(Optional.empty()).when(customerRepository).findByDocument(anyString());
+    }
+
+    private void givenCustomerRepositoryFindByIdReturnsEmpty(){
+        when(customerRepository.findById(anyString())).thenReturn(Optional.empty());
+    }
+
+    private void givenCustomerClientCreateCustomerReturnsNewCustomer() throws CustomerClientException {
+        doReturn(new CustomerClientPostCustomerResponse("124")).when(customerClient).createCustomer(any(
+                CustomerClientPostCustomerRequest.class));
+    }
+
+    private void givenCustomerClientCreateCustomerThrowsCustomerClientException() throws CustomerClientException {
+        doThrow(CustomerClientException.class).when(customerClient).createCustomer(any(CustomerClientPostCustomerRequest.class));
+    }
+
+    // When
+    private void whenCallCreateCustomerServiceThrowsUnprocessableEntityException() {
+        assertThrows(UnprocessableEntityException.class, () -> customerService.createCustomerService(givenValidPostCustomerRequest()));
+    }
+
+    private void whenCallCreateCustomerServiceThrowsNotFoundException() {
+        assertThrows(NotFoundException.class, () -> customerService.findById("123"));
+    }
+
+    private void whenCallCreateCustomerService() {
+        customerService.createCustomerService(givenValidPostCustomerRequest());
+    }
+
+    // Then
 
     private void thenExpectCustomerRepositoryFindByDocumentCalledOnce() {
         verify(customerRepository).findByDocument(anyString());
-
     }
 
     private void thenExpectCustomerClientCreateCustomerCalledOnce() throws CustomerClientException {
@@ -80,49 +120,5 @@ class CustomerServiceTest {
 
     private void thenExpectCustomerRepositorySaveCalledOnce() {
         verify(customerRepository).save(any(CustomerDomain.class));
-    }
-
-    private void thenExpectCustomerRepositoryWhenFindByDocument() {
-        doReturn(Optional.of(new CustomerDomain())).when(customerRepository).findByDocument(anyString());
-
-    }
-
-    private PostCustomerRequest givenValidPostCustomerRequest() {
-        return new PostCustomerRequest("John Doe", "12345678999", LocalDate.now(), "1234567890",
-                "john.doe@example.com");
-    }
-
-    private void thenExpectFindByDocument() {
-        doReturn(Optional.empty()).when(customerRepository).findByDocument(anyString());
-
-    }
-
-    private void thenExpectEmptyFindById(){
-        when(customerRepository.findById(anyString())).thenReturn(Optional.empty());
-    }
-
-    private void thenExpectCustomerCreationResponse() throws CustomerClientException {
-        doReturn(new CustomerClientPostCustomerResponse("124")).when(customerClient).createCustomer(any(
-                CustomerClientPostCustomerRequest.class));
-    }
-
-    private void unprocessableEntityExceptionWhenDocumentExists() {
-        assertThrows(UnprocessableEntityException.class, () -> customerService.createCustomerService(givenValidPostCustomerRequest()));
-
-    }
-
-    private void notFoundExceptionWhenFindByIdEmpty() {
-        assertThrows(NotFoundException.class, () -> customerService.findById("123"));
-
-    }
-
-    private void thenExpectCreateNewCustomer() {
-        customerService.createCustomerService(givenValidPostCustomerRequest());
-    }
-
-    private void clientExceptionWhenCustomerClienteCreateCustomer() throws CustomerClientException {
-
-        doThrow(new CustomerClientException("422.001", "CLIENT_ERROR", HttpStatus.INTERNAL_SERVER_ERROR))
-                .when(customerClient).createCustomer(any(CustomerClientPostCustomerRequest.class));
     }
 }
