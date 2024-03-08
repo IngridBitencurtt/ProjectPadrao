@@ -3,7 +3,7 @@ Este projeto consiste em uma API RESTful para gerenciamento de clientes, utiliza
 O objetivo é fornecer endpoints para criar novos clientes e recuperar informações de clientes existentes. 
 O projeto utiliza Docker para facilitar a implantação e um banco de dados SQL para armazenar os dados dos clientes.
 
-## Pre-requisites
+## Pre-requisitos
 - Java 17 
 - Spring Boot framework
 - Maven
