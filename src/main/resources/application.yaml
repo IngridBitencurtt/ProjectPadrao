@@ -1,0 +1,38 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /customers
+
+logging:
+  file:
+    path: .
+    name: padrao.log
+  level:
+    root: info
+    org:
+      springframework:
+      web: info
+    com:
+      portoseg: debug
+
+management:
+  endpoint:
+    health:
+      show-components: always
+  endpoints:
+    web:
+      base-path: /v1/actuator
+      exposure:
+        include: actuator,logfile,metrics,health,info
+
+spring:
+  flyway:
+    enabled: true
+    locations: classpath:/db/migration
+    baseline-on-migrate: true
+    encoding: UTF-8
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+      dialect: org.hibernate.dialect.MySQLDialect

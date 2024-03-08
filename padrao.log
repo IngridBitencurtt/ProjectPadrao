@@ -1,0 +1,1 @@
+2024-03-07T18:54:39.718-03:00  WARN 6300 --- [HikariPool-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h26m1s73ms410µs200ns).
