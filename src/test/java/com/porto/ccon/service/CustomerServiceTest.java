@@ -37,7 +37,7 @@ class CustomerServiceTest {
     private CustomerService customerService;
 
     @Test
-    void createCustomerServiceSuccess() throws Exception {
+    void shouldCreateCustomerServiceSuccessfully() throws Exception {
         givenValidPostCustomerRequest();
         givenCustomerRepositoryFindByDocumentReturnsEmpty();
         givenCustomerClientCreateCustomerReturnsNewCustomer();
@@ -48,27 +48,46 @@ class CustomerServiceTest {
     }
 
     @Test
-    void createCustomerServiceDocumentAlreadyExists() {
+    void shouldNotCreateCustomerServiceWhenDocumentAlreadyExists() throws CustomerClientException {
         givenValidPostCustomerRequest();
         givenCustomerRepositoryFindByDocumentReturns();
         whenCallCreateCustomerServiceThrowsUnprocessableEntityException();
+        thenExpectCustomerRepositoryFindByDocumentCalledOnce();
+        thenExpectCustomerClientCreateCustomerNotCalled();
+        thenExpectUnprocessableEntityExceptionToBeThrown();
     }
 
     @Test
-    void createCustomerServiceClientException() throws Exception {
-        givenValidPostCustomerRequest();
+    void shouldNotCreateCustomerServiceWhenCustomerClientCreateCustomerThrowsException() throws Exception {
         givenCustomerRepositoryFindByDocumentReturnsEmpty();
         givenCustomerClientCreateCustomerThrowsCustomerClientException();
-        whenCallCreateCustomerServiceThrowsUnprocessableEntityException();
+        whenCallCreateCustomerServiceGivenValidPostCustomerRequest();
+        thenExpectCustomerRepositoryFindByDocumentCalledOnce();
+        thenExpectCustomerClientCreateCustomerCalledOnce();
+        thenExpectCustomerClientCreateCustomerCalledOnceWithGivenPostCustomerRequest();
     }
 
     @Test
-    void findByIdCustomerNotFound() {
+    void shouldFindCustomerByIdSuccessfully() {
+        givenCustomerRepositoryFindByIdReturnsCustomer();
+        whenCallFindCustomerById();
+        thenExpectCustomerRepositoryFindByIdCalledOnce();
+    }
+
+    @Test
+    void shouldThrowNotFoundExceptionWhenCustomerRepositoryFindByIdReturnsEmpty() {
         givenCustomerRepositoryFindByIdReturnsEmpty();
         whenCallCreateCustomerServiceThrowsNotFoundException();
     }
 
     // Given
+
+    private void givenCustomerRepositoryFindByIdReturnsCustomer() {
+        CustomerDomain customer = new CustomerDomain();
+        customer.setId("123");
+        doReturn(Optional.of(customer)).when(customerRepository).findById(anyString());
+    }
+
     private void givenCustomerRepositoryFindByDocumentReturns() {
         doReturn(Optional.of(new CustomerDomain())).when(customerRepository).findByDocument(anyString());
     }
@@ -96,8 +115,18 @@ class CustomerServiceTest {
     }
 
     // When
+    private void whenCallFindCustomerById() {
+        customerService.findById("123");
+    }
+
     private void whenCallCreateCustomerServiceThrowsUnprocessableEntityException() {
         assertThrows(UnprocessableEntityException.class, () -> customerService.createCustomerService(givenValidPostCustomerRequest()));
+    }
+
+    private void whenCallCreateCustomerServiceGivenValidPostCustomerRequest() {
+        assertThrows(UnprocessableEntityException.class, () -> {
+            customerService.createCustomerService(givenValidPostCustomerRequest());
+        });
     }
 
     private void whenCallCreateCustomerServiceThrowsNotFoundException() {
@@ -109,6 +138,22 @@ class CustomerServiceTest {
     }
 
     // Then
+    private void thenExpectCustomerClientCreateCustomerCalledOnceWithGivenPostCustomerRequest() throws CustomerClientException {
+        verify(customerClient, times(1)).createCustomer(any(CustomerClientPostCustomerRequest.class));
+    }
+
+    private void thenExpectCustomerRepositoryFindByIdCalledOnce() {
+        verify(customerRepository).findById("123");
+    }
+
+    private void thenExpectUnprocessableEntityExceptionToBeThrown() {
+        assertThrows(UnprocessableEntityException.class, () -> customerService.createCustomerService(givenValidPostCustomerRequest()));
+    }
+
+    private void thenExpectCustomerClientCreateCustomerNotCalled() throws CustomerClientException {
+        verify(customerClient, never()).createCustomer(any(CustomerClientPostCustomerRequest.class));
+
+    }
 
     private void thenExpectCustomerRepositoryFindByDocumentCalledOnce() {
         verify(customerRepository).findByDocument(anyString());

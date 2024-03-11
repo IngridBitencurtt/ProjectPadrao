@@ -3,7 +3,6 @@ package com.porto.ccon.service;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import com.porto.ccon.exception.CustomerClientException;
 import com.porto.ccon.exception.NotFoundException;
@@ -23,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class CustomerService {
-    private final RestTemplate restTemplate;
     private final CustomerRepository customerRepository;
     private final CustomerClient customerClient;
 
