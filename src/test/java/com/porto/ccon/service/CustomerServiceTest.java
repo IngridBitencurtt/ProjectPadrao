@@ -54,17 +54,17 @@ class CustomerServiceTest {
         whenCallCreateCustomerServiceThrowsUnprocessableEntityException();
         thenExpectCustomerRepositoryFindByDocumentCalledOnce();
         thenExpectCustomerClientCreateCustomerNotCalled();
-        thenExpectUnprocessableEntityExceptionToBeThrown();
+        // faltou um then para verificar que o save não foi chamado
+        thenExpectCustomerRepositorySaveNotCalled();
     }
 
     @Test
     void shouldNotCreateCustomerServiceWhenCustomerClientCreateCustomerThrowsException() throws Exception {
         givenCustomerRepositoryFindByDocumentReturnsEmpty();
         givenCustomerClientCreateCustomerThrowsCustomerClientException();
-        whenCallCreateCustomerServiceGivenValidPostCustomerRequest();
+        whenCallCreateCustomerServiceThrowsUnprocessableEntityException();
         thenExpectCustomerRepositoryFindByDocumentCalledOnce();
         thenExpectCustomerClientCreateCustomerCalledOnce();
-        thenExpectCustomerClientCreateCustomerCalledOnceWithGivenPostCustomerRequest();
     }
 
     @Test
@@ -78,6 +78,7 @@ class CustomerServiceTest {
     void shouldThrowNotFoundExceptionWhenCustomerRepositoryFindByIdReturnsEmpty() {
         givenCustomerRepositoryFindByIdReturnsEmpty();
         whenCallCreateCustomerServiceThrowsNotFoundException();
+        thenExpectCustomerRepositoryFindByIdCalledOnce();
     }
 
     // Given
@@ -138,16 +139,13 @@ class CustomerServiceTest {
     }
 
     // Then
-    private void thenExpectCustomerClientCreateCustomerCalledOnceWithGivenPostCustomerRequest() throws CustomerClientException {
-        verify(customerClient, times(1)).createCustomer(any(CustomerClientPostCustomerRequest.class));
+
+    private void thenExpectCustomerRepositorySaveNotCalled() {
+        verify(customerRepository, never()).save(any(CustomerDomain.class));
     }
 
     private void thenExpectCustomerRepositoryFindByIdCalledOnce() {
         verify(customerRepository).findById("123");
-    }
-
-    private void thenExpectUnprocessableEntityExceptionToBeThrown() {
-        assertThrows(UnprocessableEntityException.class, () -> customerService.createCustomerService(givenValidPostCustomerRequest()));
     }
 
     private void thenExpectCustomerClientCreateCustomerNotCalled() throws CustomerClientException {
