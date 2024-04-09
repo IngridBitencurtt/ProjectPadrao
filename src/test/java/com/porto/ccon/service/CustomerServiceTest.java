@@ -54,7 +54,6 @@ class CustomerServiceTest {
         whenCallCreateCustomerServiceThrowsUnprocessableEntityException();
         thenExpectCustomerRepositoryFindByDocumentCalledOnce();
         thenExpectCustomerClientCreateCustomerNotCalled();
-        // faltou um then para verificar que o save não foi chamado
         thenExpectCustomerRepositorySaveNotCalled();
     }
 
